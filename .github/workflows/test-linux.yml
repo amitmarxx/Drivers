@@ -1,0 +1,49 @@
+name: Test Linux driver (KGSL cache clean)
+
+on:
+  push:
+    branches: [kgsl-cache-clean]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      MESA_COMMIT: b1a8996cb336f8398b06583c399fae821523152d
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Host tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ninja-build flex bison glslang-tools pkg-config python3-pip \
+            gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu libwayland-dev
+          sudo python3 -m pip install --break-system-packages --quiet 'meson>=1.5' mako pyyaml packaging
+      - name: Mesa at the DD-Turnip 0.4.0 commit
+        run: scripts/fetch_mesa.sh mesa "$MESA_COMMIT"
+      - name: Build
+        run: scripts/build_linux.sh mesa
+      - name: Package importable zip
+        run: |
+          set -euo pipefail
+          grep -q "DD_TU_KGSL_FLUSH" work/linux/patch.log || grep -q "dd_kgsl_cache_clean" work/linux/patch.log
+          grep -a -q "DD_TU_KGSL_FLUSH" out/linux/libvulkan_freedreno.so
+          mkdir -p pkg
+          cp out/linux/libvulkan_freedreno.so pkg/
+          cat > pkg/meta.json <<JSON
+          {"kind": "linux-vulkan-icd", "name": "DD-Turnip 0.4.0 KGSL clean test", "driverVersion": "0.4.0-kgslclean", "minGlibc": "2.38"}
+          JSON
+          (cd pkg && zip -q ../DD-Turnip-0.4.0-kgslclean.zip libvulkan_freedreno.so meta.json)
+          sha256sum DD-Turnip-0.4.0-kgslclean.zip | tee DD-Turnip-0.4.0-kgslclean.zip.sha256
+          cat work/linux/patch.log | tail -20
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DD-Turnip-0.4.0-kgslclean
+          path: |
+            DD-Turnip-0.4.0-kgslclean.zip
+            DD-Turnip-0.4.0-kgslclean.zip.sha256
