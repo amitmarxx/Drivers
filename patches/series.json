@@ -180,5 +180,12 @@
       "linux"
     ],
     "summary": "Emit the pending cache flushes where a suspended dynamic render pass chain starts, so indirect draws in vkd3d-proton render passes split across command buffers no longer read their arguments before the compute pass writes them (UE5 Nanite and virtual shadow maps, by K11MCH1)"
+  },
+  {
+    "file": "scripts/dd_android_release_wait.py",
+    "targets": [
+      "android"
+    ],
+    "summary": "Experiment: vkQueueSignalReleaseImageANDROID waits for queue idle before handing the image to Android (KGSL sync-file export can return -1 while the submit is still queued)"
   }
 ]
