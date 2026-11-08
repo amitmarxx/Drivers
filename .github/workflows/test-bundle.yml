@@ -10,7 +10,7 @@ permissions:
 
 env:
   MESA_COMMIT: b1a8996cb336f8398b06583c399fae821523152d
-  TEST_VERSION: 0.4.900
+  TEST_VERSION: 0.4.901
 
 jobs:
   build:
@@ -68,14 +68,14 @@ jobs:
         run: |
           set -euo pipefail
           ls -R out
-          grep -a -q "DroidDeck test: release image waits" out/android/libvulkan_freedreno.so
+          grep -a -q "DroidDeck test: release image waits" out/android/libvulkan_freedreno.so && grep -a -q "DroidDeck test: acquire waits" out/android/libvulkan_freedreno.so
           scripts/fetch_mesa.sh mesa "$MESA_COMMIT"
           python3 scripts/package_bundle.py --version "$TEST_VERSION" --mesa-commit "$MESA_COMMIT" \
             --mesa-version "$(tr -d '[:space:]' < mesa/VERSION)" --mesa-src mesa
           ls -l dist
       - uses: actions/upload-artifact@v4
         with:
-          name: DD-Turnip-v0.4.900-release-wait
+          name: DD-Turnip-v0.4.901-release-wait
           path: |
-            dist/DD-Turnip-v0.4.900.zip
-            dist/DD-Turnip-v0.4.900.zip.sha256
+            dist/DD-Turnip-v0.4.901.zip
+            dist/DD-Turnip-v0.4.901.zip.sha256

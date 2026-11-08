@@ -58,3 +58,21 @@ replace(
     '   return result;\n',
     'release image waits for the queue',
 )
+
+# Second experiment in the same build: before DroidDeck may draw into a swapchain image again, wait
+# on the CPU for Android's release fence (SurfaceFlinger / display done reading it), in case the
+# GPU-side wait on the imported sync file is not honoured on KGSL.
+replace(
+    ANDROID,
+    '   int semaphore_fd = -1, fence_fd = -1;\n'
+    '   if (nativeFenceFd >= 0) {\n',
+    '   int semaphore_fd = -1, fence_fd = -1;\n'
+    '   if (nativeFenceFd >= 0) {\n'
+    '      static bool dd_acq_logged;\n'
+    '      int dd_ret = sync_wait(nativeFenceFd, 1000);\n'
+    '      if (!dd_acq_logged) {\n'
+    '         dd_acq_logged = true;\n'
+    '         mesa_logi("DroidDeck test: acquire waits for the release fence on the CPU (sync_wait %d)", dd_ret);\n'
+    '      }\n',
+    'acquire waits for the Android release fence on the CPU',
+)
